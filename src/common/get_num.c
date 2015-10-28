@@ -15,8 +15,7 @@
 #include <errno.h>
 #include "get_num.h"
 
-static void
-gnFail(const char *fname, const char *msg, const char *arg, const char *name)
+static void gnFail(const char *fname, const char *msg, const char *arg, const char *name)
 {
     fprintf(stderr, "%s error", fname);
     if (name != NULL)
@@ -28,8 +27,7 @@ gnFail(const char *fname, const char *msg, const char *arg, const char *name)
     exit(EXIT_FAILURE);
 }
 
-static long
-getNum(const char *fname, const char *arg, int flags, const char *name)
+static long getNum(const char *fname, const char *arg, int flags, const char *name)
 {
     long res;
     char *endptr;
@@ -58,14 +56,12 @@ getNum(const char *fname, const char *arg, int flags, const char *name)
     return res;
 }
 
-long
-getLong(const char *arg, int flags, const char *name)
+long getLong(const char *arg, int flags, const char *name)
 {
     return getNum("getLong", arg, flags, name);
 }
 
-int
-getInt(const char *arg, int flags, const char *name)
+int getInt(const char *arg, int flags, const char *name)
 {
     long res;
 

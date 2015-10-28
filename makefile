@@ -1,26 +1,23 @@
 CC=gcc
+CC_FLAGS=
 
-LIB_SRC=$(PWD)/lib/*.c
-OUTPUT_DIR=$(PWD)/bin
+# --- sources ---
+COMMON_SRC := $(wildcard src/common/*.c)
+MEMORY_SRC := $(wildcard src/memory/*.c)
+# --- include ---
+COMMON_INCLUDE := -Iinclude/common/
+# --- objects ---
+COMMON_OBJ := $(COMMON_SRC:src%.c=bin/obj%.o)
+OBJECTS := $(COMMON_OBJ)
 
-.PHONY: all memalloc memalloc-exec
+.PHONY: all clean common
 
-all:
-	memalloc
+all: common
 
-memalloc:
-	$(output_dir)
-	$(CC) -o $(PWD)/bin/free_and_sbrk $(LIB_SRC) memalloc/free_and_sbrk.c
+common: $(COMMON_OBJ)
 
-memalloc-exec:
-	$(output_dir)
-	$(CC) -o $(PWD)/bin/free_and_sbrk-exec $(LIB_SRC) memalloc/exec/exec-7-1.c
-	$(CC) -o $(PWD)/bin/program_segments $(LIB_SRC) memalloc/exec/prog-seg.c
-	$(CC) -c memalloc/exec/memalloc.c
+clean:
+	rm $(OBJECTS)
 
-
-output_dir:
-	@rm -rf $(OUTPUT_DIR)
-	@mkdir -p $(OUTPUT_DIR)
-
-
+bin/obj/common/%.o:src/common/%.c
+	$(CC) $(CC_FLAGS) $(COMMON_INCLUDE) -c -o $@ $<
