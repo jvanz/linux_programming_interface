@@ -1,5 +1,5 @@
-#ifndef _MEMALLOC_HEADER
-#define  _MEMALLOC_HEADER
+#ifndef _MEMORY_HEADER
+#define  _MEMORY_HEADER
 
 /**
  * Allocates a block of memory with bytes of length
