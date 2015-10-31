@@ -5,7 +5,7 @@
  * Allocates a block of memory with bytes of length
  * @returns a pointer to the allocated block of memory. Return NULL in error
  */
-void* vmalloc(size_t bytes);
+void* memory_alloc(size_t bytes);
 
 /**
  * Deallocates the ptr block of memory

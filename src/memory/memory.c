@@ -3,45 +3,41 @@
 
 #define BRK_INCREMENT = 1024;
 
-union Header {
+struct Header {
 	size_t length;
-	struct {
-		size_t length;
-		union Header *previous;
-		union Header *next;
-	} free;
+	struct Header *previous;
+	struct Header *next;
 };
 
-union Header *free_list = NULL;
+static struct Header *free_list = NULL;
 
-void* vmalloc(size_t bytes)
+void* memory_alloc(size_t bytes)
 {
-	union Header *header = NULL;
 	if(!free_list){
-		free_list = (union Header*) sbrk(bytes + sizeof(union Header));
-		free_list->free.length = bytes;
-		free_list->free.previous = NULL;
-		free_list->free.next = NULL;
+		free_list = (struct Header*) sbrk(bytes + sizeof(struct Header));
+		free_list->length = bytes;
+		free_list->previous = NULL;
+		free_list->next = NULL;
 	}
-	while(free_list && free_list->free.length < bytes)
-		free_list = free_list->free.next;
-	if(!free_list){
+	struct Header *header = free_list;
+	while(header && header->length < bytes)
+		//look for a memory block with enough memory
+		header = header->next;
+	int extra = 0;
+	if((extra = header->length - bytes) > 0){
+		//memory block is bigger than needed
+		struct Header *new_free_block = header + sizeof(struct Header) + 1;
+		new_free_block->length = extra - sizeof(struct Header);
+		new_free_block->previous = NULL;
+		new_free_block->next = free_list;
+	} else if(extra < 0){
 		//need more memory
-		header = (union Header*) sbrk(bytes + sizeof(union Header));
-	} else {
-		header = free_list;
-		free_list->free.previous->free.next = free_list->free.next;
-		free_list->free.next->free.previous = free_list->free.previous;
-		int extra = 0;
-		if((extra = header->free.length - bytes) > 0){
-			union Header *new_free_block = header + sizeof(union Header) + 1;
-			new_free_block->free.length = extra - sizeof(union Header);
-			new_free_block->free.previous = NULL;
-			new_free_block->free.next = free_list;
-		}
-		header->length = header->free.length - extra;
+		header = (struct Header*) sbrk(bytes + sizeof(struct Header));
 	}
-	return header + sizeof(union Header);
+	header->previous->next = header->next;
+	header->next->previous = header->previous;
+	header->length = header->length - extra;
+	return header + sizeof(struct Header);
 }
 
 int vfree(void* ptr)
