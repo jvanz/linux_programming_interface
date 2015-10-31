@@ -40,7 +40,9 @@ void* memory_alloc(size_t bytes)
 	return header + sizeof(struct Header);
 }
 
-int vfree(void* ptr)
+void memory_free(void* ptr)
 {
-	return 0;
+	struct Header* memory_block = (struct Header*) ptr;
+	memory_block->previous = NULL;
+	memory_block->next = free_list;
 }

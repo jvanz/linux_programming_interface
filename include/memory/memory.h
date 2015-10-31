@@ -11,6 +11,6 @@ void* memory_alloc(size_t bytes);
  * Deallocates the ptr block of memory
  * @returns 0 on success
  */
-int vfree(void* ptr);
+void memory_free(void* ptr);
 
 #endif
