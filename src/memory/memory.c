@@ -34,9 +34,14 @@ void* memory_alloc(size_t bytes)
 		//need more memory
 		header = (struct Header*) sbrk(bytes + sizeof(struct Header));
 	}
-	header->previous->next = header->next;
-	header->next->previous = header->previous;
-	header->length = header->length - extra;
+	if(header->previous)
+		header->previous->next = header->next;
+	if(header->next)
+		header->next->previous = header->previous;
+	if(header->length)
+		header->length = header->length - extra;
+	if(header == free_list)
+		free_list = NULL;
 	return header + sizeof(struct Header);
 }
 
@@ -45,4 +50,5 @@ void memory_free(void* ptr)
 	struct Header* memory_block = (struct Header*) ptr;
 	memory_block->previous = NULL;
 	memory_block->next = free_list;
+	free_list = ptr;
 }
