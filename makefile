@@ -26,7 +26,7 @@ memory: $(MEMORY_OBJ) $(SAMPLES_OBJ)
 samples: $(MEMORY_OBJ) $(SAMPLES_OBJ)
 	$(CC) $(CFLAGS) -o bin/memory_allocation $(MEMORY_OBJ) bin/obj/samples/memory_allocation.o
 
-debug: CFLAGS += -g
+debug: CFLAGS += -g -O0
 debug: clean all
 
 directories:
