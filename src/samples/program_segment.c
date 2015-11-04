@@ -6,7 +6,7 @@ extern char etext, edata, end;
 
 void print_segments();
 
-int main(int argc, char** argv)
+int main()
 {
 	printf("First address past:\n");
 	printf("    program text (etext)      %10p\n", &etext);

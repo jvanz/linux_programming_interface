@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall
+CFLAGS=-Wall -Wextra -Werror
 
 # --- sources ---
 COMMON_SRC := $(wildcard src/common/*.c)
@@ -26,7 +26,7 @@ memory: $(MEMORY_OBJ) $(SAMPLES_OBJ)
 samples: $(MEMORY_OBJ) $(SAMPLES_OBJ)
 	$(CC) $(CFLAGS) -o bin/memory_allocation $(MEMORY_OBJ) bin/obj/samples/memory_allocation.o
 
-debug: CFLAGS += -g -O0
+debug: CFLAGS += -g -O0 -DDEBUG
 debug: clean all
 
 directories:

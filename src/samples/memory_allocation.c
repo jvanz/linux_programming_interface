@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <memory/memory.h>
 
-int main(int argc, char **argv){
+int main(){
 	int *i = (int*) memory_alloc(sizeof(int));
 	int *i2 = (int*) memory_alloc(sizeof(int));
 	*i = 2;
@@ -15,7 +15,7 @@ int main(int argc, char **argv){
 	*i = 0;
 	int index = 0;
 	for(index = 0; index < 100; index++ ){
-		int *int_ptr = memory_alloc(sizeof(int));
+		int *int_ptr = (int*) memory_alloc(sizeof(int));
 		*int_ptr = index;
 		*i += *int_ptr;
 		memory_free(int_ptr);
