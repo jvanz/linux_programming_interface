@@ -1,10 +1,8 @@
 #include <unistd.h>
 #include "memory.h"
-#ifdef DEBUG
-#include <stdio.h>
-#endif
 
 #define HEADER_SIZE sizeof(struct Header)
+
 struct Header {
 	size_t length;
 	struct Header *previous;
@@ -44,20 +42,14 @@ void* memory_alloc(size_t bytes)
 		header->length = header->length - extra;
 	if(header == free_list)
 		free_list = NULL;
-#ifdef DEBUG
-		printf("header address: %p\nheader address + HEADER_SIZE: %p\n", header, (void*) (((char*)header) + HEADER_SIZE));
-#endif
 	return (void*) (((char*)header) + HEADER_SIZE);
 }
 
 void memory_free(void* ptr)
 {
 	struct Header* memory_block = (struct Header*) (((char*)ptr) - HEADER_SIZE);
-#ifdef DEBUG
-		printf("ptr address: %p\nptr address - HEADER_SIZE: %p\n", ptr, (((char*)ptr) - HEADER_SIZE));
-#endif
 	memory_block->previous = NULL;
 	memory_block->next = free_list;
-	free_list = ptr;
+	free_list = memory_block;
 	ptr = NULL;
 }
