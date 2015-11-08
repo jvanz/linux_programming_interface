@@ -16,7 +16,7 @@ struct Header {
 	struct Header *next; //next memory block in the free list
 };
 #ifdef DEBUG
-void get_free_memory_blocks(void);
+void show_free_memory_blocks(void);
 #endif
 
 static struct Header *free_list = NULL;
@@ -46,8 +46,8 @@ void* memory_alloc(size_t bytes)
 		//need more memory
 		header = (struct Header*) sbrk(bytes + HEADER_SIZE);
 		header->length = bytes;
-		free_list->previous = NULL;
-		free_list->next = NULL;
+		header->previous = NULL;
+		header->next = NULL;
 	}
 	if(header->previous)
 		header->previous->next = header->next;
@@ -61,7 +61,7 @@ void* memory_alloc(size_t bytes)
 
 	}
 #ifdef DEBUG
-get_free_memory_blocks();
+show_free_memory_blocks();
 #endif
 	return (void*) (((char*)header) + HEADER_SIZE);
 }
@@ -76,13 +76,14 @@ void memory_free(void* ptr)
 	free_list = memory_block;
 	ptr = NULL;
 #ifdef DEBUG
-get_free_memory_blocks();
+show_free_memory_blocks();
 #endif
 
 }
 
 #ifdef DEBUG
-void get_free_memory_blocks(){
+void show_free_memory_blocks()
+{
 	struct Header *header = free_list;
 	int total = 0;
 	//look for a memory block with enough memory
@@ -91,6 +92,6 @@ void get_free_memory_blocks(){
 		header = header->next;
 		total += 1;
 	}
-	printf("\nTotal memory blocks: %d\n", total);
+	printf("\n");
 }
 #endif
