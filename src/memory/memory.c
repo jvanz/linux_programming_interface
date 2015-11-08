@@ -31,7 +31,7 @@ void* memory_alloc(size_t bytes)
 		free_list->next = NULL;
 	}
 	struct Header *header = free_list;
-	//look for a memory block with enough memory
+	//look for a memory block with enough length
 	while(header && (header->length < bytes || (header->length > bytes && (header->length - bytes < HEADER_SIZE + 1))))
 		header = header->next;
 	int extra = 0;
@@ -42,7 +42,7 @@ void* memory_alloc(size_t bytes)
 		new_free_block->next = header->next;
 		header->next = new_free_block;
 		new_free_block->previous = header;
-	} else if(extra < 0){
+	} else if(extra < 0 || !header){
 		//need more memory
 		header = (struct Header*) sbrk(bytes + HEADER_SIZE);
 		header->length = bytes;
@@ -53,10 +53,13 @@ void* memory_alloc(size_t bytes)
 		header->previous->next = header->next;
 	if(header->next)
 		header->next->previous = header->previous;
-	if(header->length)
-		header->length = header->length - extra;
-	if(header == free_list)
+	header->length = header->length - extra;
+	if(header == free_list) {
 		free_list = header->next;
+		if(free_list)
+			free_list->previous = NULL;
+
+	}
 #ifdef DEBUG
 get_free_memory_blocks();
 #endif
