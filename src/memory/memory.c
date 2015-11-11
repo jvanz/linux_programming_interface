@@ -16,10 +16,13 @@ struct Header {
 	struct Header *next; //next memory block in the free list
 };
 #ifdef DEBUG
-void show_free_memory_blocks(void);
+void show_debug_info(void);
 #endif
 
+/** Linked list with available memory blocks */
 static struct Header *free_list = NULL;
+/** Last used memory address */
+static struct Header *top_alloc = NULL;
 
 void* memory_alloc(size_t bytes)
 {
@@ -29,6 +32,7 @@ void* memory_alloc(size_t bytes)
 		free_list->length = bytes;
 		free_list->previous = NULL;
 		free_list->next = NULL;
+		top_alloc = free_list;
 	}
 	struct Header *header = free_list;
 	//look for a memory block with enough length
@@ -60,8 +64,10 @@ void* memory_alloc(size_t bytes)
 			free_list->previous = NULL;
 
 	}
+	if(top_alloc < header )
+		top_alloc = header;
 #ifdef DEBUG
-show_free_memory_blocks();
+show_debug_info();
 #endif
 	return (void*) (((char*)header) + HEADER_SIZE);
 }
@@ -69,20 +75,34 @@ show_free_memory_blocks();
 void memory_free(void* ptr)
 {
 	struct Header* memory_block = (struct Header*) (((char*)ptr) - HEADER_SIZE);
-	memory_block->previous = NULL;
-	memory_block->next = free_list;
-	if(memory_block->next)
-		memory_block->next->previous = memory_block;
-	free_list = memory_block;
+	if(top_alloc == memory_block ){
+		//let's shrink the heap. All memory block in the free_list after the memory_block can be removed
+		struct Header *header = free_list;
+		while(header && header > top_alloc){
+			if(header == free_list){
+				free_list = header->next;
+			}
+			header->previous->next = header->next;
+			header->next->previous = header->previous;
+			header = header->next;
+		}
+		brk(memory_block);
+	} else {
+		memory_block->previous = NULL;
+		memory_block->next = free_list;
+		if(memory_block->next)
+			memory_block->next->previous = memory_block;
+		free_list = memory_block;
+	}
 	ptr = NULL;
 #ifdef DEBUG
-show_free_memory_blocks();
+show_debug_info();
 #endif
 
 }
 
 #ifdef DEBUG
-void show_free_memory_blocks()
+void show_debug_info()
 {
 	struct Header *header = free_list;
 	int total = 0;
@@ -93,5 +113,6 @@ void show_free_memory_blocks()
 		total += 1;
 	}
 	printf("\n");
+	printf("sbrk(0) = %p | top_alloc = %p\n", sbrk(0), top_alloc);
 }
 #endif
