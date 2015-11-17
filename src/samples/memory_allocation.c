@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <memory/memory.h>
 
-#define LOOP 100
+#define LOOP 10
 #define ARRAY_LENGTH 10
 
 struct ordinary {
@@ -24,7 +24,7 @@ int main(){
 	printf("%d + %d = %d\n", *i, *i2, *i + *i2);
 	memory_free(i);
 	memory_free(i2);
-	i = (int*) memory_alloc(sizeof(int));
+	/*i = (int*) memory_alloc(sizeof(int));
 	*i = 0;
 	unsigned int index = 0;
 	for(index = 0; index < LOOP; index++ ){
@@ -58,6 +58,6 @@ int main(){
 			printf("%d", ia[index]);
 	}
 	printf(" ]\n");
-	memory_free(ia);
+	memory_free(ia);*/
 	exit(EXIT_SUCCESS);
 }
