@@ -22,8 +22,8 @@ int main(){
 	*i = 2;
 	*i2 = 100;
 	printf("%d + %d = %d\n", *i, *i2, *i + *i2);
-	memory_free(i);
 	memory_free(i2);
+	memory_free(i);
 	/*i = (int*) memory_alloc(sizeof(int));
 	*i = 0;
 	unsigned int index = 0;
