@@ -29,6 +29,9 @@ samples: $(MEMORY_OBJ) $(SAMPLES_OBJ)
 debug: CFLAGS += -g -O0 -DDEBUG
 debug: clean all
 
+gdb: debug
+	gdb -x gdbcmd --tui ./bin/memory_allocation
+
 directories:
 	mkdir -p bin/obj/{common,memory}
 
