@@ -109,7 +109,7 @@ static void show_debug_info()
 {
 	Header *block;
 	for(block = base.next; block != &base; block = block->next){
-		printf("-> %zu ", block->size);
+		printf("-> %d ", block->size);
 	}
 	printf("\n");
 }
