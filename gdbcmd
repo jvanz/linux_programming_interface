@@ -1,4 +1,0 @@
-b memory_alloc
-b memory_free
-b increase_heap
-b main
