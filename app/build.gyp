@@ -8,7 +8,10 @@
 		'default_configuration': "Release",
 		'configurations': {
 			'Debug': {
-				'cflags': ['<@(gcc_flags)', '-g']
+				'cflags': ['<@(gcc_flags)', '-g'],
+				'defines': [
+					'DEBUG'
+				]
 			},
 			'Release': {
 				'cflags': ['<@(gcc_flags)']
