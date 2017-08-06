@@ -1,14 +1,14 @@
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/un.h>
 
 #include "common.h"
@@ -30,7 +30,9 @@ static const char* get_level_str(enum log_level);
 
 static void write_message(struct log_entry log)
 {
-	dprintf(file, "<DATE> <TIME> (%d) %s: %s\n", getpid(),
+	char* time = ctime(&log.time);
+	time[24] = '\0';
+	dprintf(file, "%s (%d) %s: %s\n", time, getpid(),
 		get_level_str(log.level), log.message);
 }
 
@@ -106,6 +108,7 @@ int main(void)
 {
 	init();
 	struct log_entry log;
+	log.time = time(NULL);
 	log.level = DEBUG;
 	log.message = "Testing...";
 	write_message(log);
