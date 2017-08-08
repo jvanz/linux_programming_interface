@@ -9,7 +9,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "common.h"
 #include "logger.h"
 
 static int sfd; //socket file descriptor
@@ -18,13 +17,13 @@ static int epoll; // epoll instance
 static int file;
 
 static const char* LOG_FILE = "/tmp/logger.log";
-static const int BACKLOG = 32;
+static const int BACKLOG = 128;
 static const int MAX_EVENTS = 10;
 
 /* Prototypes */
 static void init(void);
 static void cleanup(void);
-static void write_message(struct log_entry);
+static void write_message(struct log_entry, char* message);
 static const char* get_level_str(enum log_level);
 static void run(void);
 
@@ -39,48 +38,56 @@ static void run(void)
 			continue;
 		for (int i = 0; i < ready; i++){
 			if (events[i].data.fd == sfd){
+				printf("New connection coming...\n");
 				// seems to be a new connection. Let's add it
 				// in the epoll
 				int cfd = accept(events[i].data.fd, NULL, NULL);
 				if (cfd == -1){
-					printf("Cannot accept connection");
+					printf("Cannot accept connection\n");
 				} else {
 					struct epoll_event ev;
 					ev.events = EPOLLIN;
 					ev.data.fd = cfd;
 					if (epoll_ctl(epoll, EPOLL_CTL_ADD, cfd, &ev) == -1)
-						printf("epoll setup\n");
+						printf("epoll_ctl error\n");
+					else
+						printf("epoll_ctl add new fd\n");
 				}
 			} else {
-				if (events[i].events & EPOLLERR)
+				if (events[i].events & EPOLLERR){
 					// TODO handle error
 					continue;
-				/*printf("EPOLLERR");*/
-				if (events[i].events & EPOLLHUP)
+				}
+				if (events[i].events & EPOLLHUP){
 					// TODO handle hangup
 					continue;
-				/*printf("EPOLLHUP");*/
+				}
 				if (events[i].events & (EPOLLIN | EPOLLPRI)){
-					printf("EPOLLIN and EPOLLPRI");
+					printf("EPOLLIN and EPOLLPRI\n");
 					struct log_entry log;
 					ssize_t bytes = read(events[i].data.fd, &log, sizeof(log));
-					if (bytes == -1) {
-						printf(strerror(errno));
-					} else {
-						write_message(log);
+					if (bytes == -1)
+						err(1, "Cannot read struct");
+					char* message = malloc(log.length+1);
+					memset(message, 0, log.length+1);
+					bytes = read(events[i].data.fd, message, log.length);
+					if (bytes == -1){
+						free(message);
+						err(1, "Cannot read struct");
 					}
+					write_message(log, message);
+					free(message);
 				}
 			}
 		}
 	}
 }
 
-static void write_message(struct log_entry log)
+static void write_message(struct log_entry log, char* message)
 {
 	char* time = ctime(&log.time);
 	time[24] = '\0';
-	dprintf(file, "%s (%d) %s: %s\n", time, getpid(),
-		get_level_str(log.level), log.message);
+	dprintf(file, "%s (%d) %s: %s\n", time, getpid(), get_level_str(log.level), message);
 }
 
 static const char* get_level_str(enum log_level level)
@@ -108,39 +115,39 @@ static void init(void)
 	file = open(LOG_FILE, O_WRONLY | O_CREAT | O_APPEND,  S_IRUSR | S_IWUSR
 		| S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH );
 	if (file == -1)
-		exit_with_error();
+		err(1,NULL);
 
 	//create the unix socket
 	struct sockaddr_un addr;
 	sfd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sfd == -1)
-		exit_with_error();
-	printf("Socket created");
+		err(1,NULL);
+	printf("Socket created\n");
 
 	memset(&addr, 0, sizeof(struct sockaddr_un));
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, SOCKNAME, sizeof(addr.sun_path) -1);
 
 	if (bind(sfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1)
-		exit_with_error();
-	printf("Socket binded");
+		err(1,NULL);
+	printf("Socket binded\n");
 
 	if (listen(sfd, BACKLOG) == -1)
-		exit_with_error();
+		err(1,NULL);
 	printf("Listening...\n");
 
 	//create the epoll instance to monitor the fds used by the logger
 	epoll = epoll_create1(0);
 	if (epoll < 0)
-		exit_with_error();
-	printf("epoll created");
+		err(1,NULL);
+	printf("epoll created\n");
 
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.fd = sfd;
 	if (epoll_ctl(epoll, EPOLL_CTL_ADD, sfd, &ev) == -1)
-		exit_with_error();
-	printf("epoll setup");
+		err(1,NULL);
+	printf("epoll setup\n");
 }
 
 /**
@@ -158,11 +165,6 @@ static void cleanup(void)
 int main(void)
 {
 	init();
-	struct log_entry log;
-	log.time = time(NULL);
-	log.level = DEBUG;
-	log.message = "Testing...";
-	write_message(log);
 	run();
 	cleanup();
 }
