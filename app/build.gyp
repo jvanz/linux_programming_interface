@@ -1,7 +1,7 @@
 {
 	'variables': {
 		'gcc_flags': [
-			'-Werror -Wall -Wextra'
+			'-Werror -Wall -Wextra -fdiagnostics-color=always'
 		]
 	},
 	'target_defaults':{
@@ -10,7 +10,7 @@
 			'Debug': {
 				'cflags': ['<@(gcc_flags)', '-g'],
 				'defines': [
-					'DEBUG'
+					'LDEBUG'
 				]
 			},
 			'Release': {
@@ -24,6 +24,13 @@
 		'type': 'executable',
 		'sources': [
 			'src/logger.c'
+		]
+	},
+	{
+		'target_name': 'dummy',
+		'type': 'executable',
+		'sources': [
+			'src/dummy.c'
 		]
 	}
 	]
