@@ -8,6 +8,7 @@
 #include <sys/epoll.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 #include "logger.h"
 
@@ -19,6 +20,7 @@ static int file;
 static const char* LOG_FILE = "/tmp/logger.log";
 static const int BACKLOG = 128;
 static const int MAX_EVENTS = 10;
+static const unsigned int MAX_CHILD = 2;
 
 /* Prototypes */
 static void init(void);
@@ -63,7 +65,7 @@ static void run(void)
 					continue;
 				}
 				if (events[i].events & (EPOLLIN | EPOLLPRI)){
-					printf("EPOLLIN and EPOLLPRI\n");
+					/*printf("EPOLLIN and EPOLLPRI\n");*/
 					struct log_entry log;
 					ssize_t bytes = read(events[i].data.fd, &log, sizeof(log));
 					if (bytes == -1)
@@ -165,6 +167,32 @@ static void cleanup(void)
 int main(void)
 {
 	init();
-	run();
+	// launch children process
+	int is_parent = 1;
+	for (unsigned int i = 0; i < MAX_CHILD; ++i){
+		pid_t pid = fork();
+		if (pid == -1)
+			err(1,NULL);
+		// children process should not spawn new process
+		if (pid == 0){
+			is_parent = 0;
+			break;
+		}
+	}
+	if (is_parent){
+		// wait for the children process
+		unsigned int has_child = MAX_CHILD;
+		while (has_child){
+			int wstatus = 0;
+			pid_t pid =  wait(&wstatus);
+			if (pid > 0)
+				has_child--;
+			else
+				printf("wait: %s", strerror(errno));
+		}
+	} else {
+		// children process should handle the income connection/events
+		run();
+	}
 	cleanup();
 }
