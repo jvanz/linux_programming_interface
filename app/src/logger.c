@@ -35,47 +35,53 @@ static void run(void)
 	int ready;
 	for (;;){
 		ready = epoll_wait(epoll, events, MAX_EVENTS, -1);
-		if (ready == -1)
-			// TODO deal with the error
+		if (ready == -1){
+			printf("PID(%d): epoll_wait: %s\n", getpid(), strerror(errno));
 			continue;
+		}
 		for (int i = 0; i < ready; i++){
 			if (events[i].data.fd == sfd){
-				printf("New connection coming...\n");
+				printf("PID(%d): New connection coming...\n", getpid());
 				// seems to be a new connection. Let's add it
 				// in the epoll
 				int cfd = accept(events[i].data.fd, NULL, NULL);
 				if (cfd == -1){
-					printf("Cannot accept connection\n");
+					printf("PID(%d): Cannot accept connection: %s\n", getpid(), strerror(errno));
 				} else {
 					struct epoll_event ev;
 					ev.events = EPOLLIN;
 					ev.data.fd = cfd;
 					if (epoll_ctl(epoll, EPOLL_CTL_ADD, cfd, &ev) == -1)
-						printf("epoll_ctl error\n");
+						printf("PID(%d): Cannot add new fd(%d):\t%s\n", getpid(),
+							cfd, strerror(errno));
 					else
-						printf("epoll_ctl add new fd\n");
+						printf("PID(%d): added new fd(%d)\n", getpid(), cfd);
 				}
 			} else {
 				if (events[i].events & EPOLLERR){
-					// TODO handle error
-					continue;
+					printf("fd %d:\tEPOLLERR\n", events[i].data.fd);
 				}
 				if (events[i].events & EPOLLHUP){
-					// TODO handle hangup
-					continue;
+					if (epoll_ctl(epoll, EPOLL_CTL_DEL, events[i].data.fd, NULL) == -1){
+						printf("PID(%d): Cannot delete fd(%d):\t%s\n", getpid(),
+							events[i].data.fd, strerror(errno));
+					} else{
+						printf("PID(%d): removed fd(%d)\n", getpid(), events[i].data.fd);
+						if (close(events[i].data.fd) == -1)
+							printf("PID(%d): cannot close fd(%d):\t%s\n", getpid(), events[i].data.fd, strerror(errno));
+					}
 				}
 				if (events[i].events & (EPOLLIN | EPOLLPRI)){
-					/*printf("EPOLLIN and EPOLLPRI\n");*/
 					struct log_entry log;
 					ssize_t bytes = read(events[i].data.fd, &log, sizeof(log));
 					if (bytes == -1)
-						err(1, "Cannot read struct");
+						continue;
 					char* message = malloc(log.length+1);
 					memset(message, 0, log.length+1);
 					bytes = read(events[i].data.fd, message, log.length);
 					if (bytes == -1){
 						free(message);
-						err(1, "Cannot read struct");
+						continue;
 					}
 					write_message(log, message);
 					free(message);
@@ -124,7 +130,7 @@ static void init(void)
 	sfd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sfd == -1)
 		err(1,NULL);
-	printf("Socket created\n");
+	printf("PID(%d): Socket created\n", getpid());
 
 	memset(&addr, 0, sizeof(struct sockaddr_un));
 	addr.sun_family = AF_UNIX;
@@ -132,24 +138,24 @@ static void init(void)
 
 	if (bind(sfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1)
 		err(1,NULL);
-	printf("Socket binded\n");
+	printf("PID(%d): Socket binded\n", getpid());
 
 	if (listen(sfd, BACKLOG) == -1)
 		err(1,NULL);
-	printf("Listening...\n");
+	printf("PID(%d): Listening...\n", getpid());
 
 	//create the epoll instance to monitor the fds used by the logger
 	epoll = epoll_create1(0);
 	if (epoll < 0)
 		err(1,NULL);
-	printf("epoll created\n");
+	printf("PID(%d): epoll created\n", getpid());
 
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.fd = sfd;
 	if (epoll_ctl(epoll, EPOLL_CTL_ADD, sfd, &ev) == -1)
 		err(1,NULL);
-	printf("epoll setup\n");
+	printf("PID(%d): epoll setup\n", getpid());
 }
 
 /**
@@ -174,7 +180,7 @@ int main(void)
 		if (pid == -1)
 			err(1,NULL);
 		// children process should not spawn new process
-		if (pid == 0){
+		if (!pid){
 			is_parent = 0;
 			break;
 		}
